@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Humanoid Robotic Hand Simulator</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <button id="lang-toggle" class="lang-toggle">中文</button>
+
+  <header>
+    <h1 data-i18n="ui.title">Humanoid Robotic Hand Simulator</h1>
+    <p class="subtitle" data-i18n="ui.subtitle">14-DOF five-finger robotic hand &mdash; force-controlled grasping with contact sensing, grip-force regulation, variable payloads, and grasp success tracking</p>
+  </header>
+
+  <main>
+    <div class="stage">
+      <canvas id="scene"></canvas>
+    </div>
+
+    <aside class="panel">
+      <section class="status-box">
+        <div class="status-label" data-i18n="ui.ctrlstate">CONTROLLER STATE</div>
+        <div id="status" class="status-value">IDLE</div>
+        <div class="status-row"><span data-i18n="ui.contacts">Contacts</span><b id="contacts">0 / 5</b></div>
+        <div class="status-row"><span data-i18n="ui.gripforce">Grip force</span><b id="gripforce">0.0 N</b></div>
+        <div class="meter"><div id="gripbar" class="meter-fill"></div></div>
+        <div class="status-row"><span data-i18n="ui.hold">Hold</span><b id="hold">&mdash;</b></div>
+        <div class="status-row"><span data-i18n="ui.successrate">Success rate</span><b id="successrate">&mdash; (0/0)</b></div>
+        <div class="status-row"><span data-i18n="ui.payload">Payload</span><b id="payload">&mdash;</b></div>
+        <div class="status-row"><span data-i18n="ui.object">Object</span><b id="objstate">ON TABLE</b></div>
+      </section>
+
+      <section class="controls">
+        <div class="btn-grid">
+          <button id="btn-open" data-i18n="btn.open">Open Palm</button>
+          <button id="btn-fist" data-i18n="btn.fist">Make Fist</button>
+          <button id="btn-grasp" data-i18n="btn.grasp">Grasp Object</button>
+          <button id="btn-seq" class="primary" data-i18n="btn.seq">&#9654; Full Sequence</button>
+        </div>
+        <button id="btn-next" class="wide" data-i18n="btn.next">&#8635; Next Payload</button>
+        <label class="slider-row">
+          <span><span data-i18n="ctl.gripforce">Grip force</span> <em id="fsetval">14 N</em></span>
+          <input type="range" id="fset" min="2" max="26" value="14">
+        </label>
+        <label class="slider-row">
+          <span data-i18n="ctl.curl">Manual curl</span>
+          <input type="range" id="curl" min="0" max="100" value="0">
+        </label>
+        <label class="slider-row">
+          <span data-i18n="ctl.speed">Joint speed</span>
+          <input type="range" id="speed" min="40" max="300" value="140">
+        </label>
+      </section>
+
+      <section class="telemetry">
+        <div class="telemetry-head">
+          <span class="telemetry-title" data-i18n="tel.title">JOINT TELEMETRY</span>
+          <button id="reset-stats" class="mini" data-i18n="tel.reset">RESET</button>
+        </div>
+        <table>
+          <thead>
+            <tr>
+              <th data-i18n="th.finger">FINGER</th>
+              <th data-i18n="th.curl">CURL</th>
+              <th data-i18n="th.force">FORCE</th>
+              <th data-i18n="th.ct">CT</th>
+            </tr>
+          </thead>
+          <tbody id="telemetry-body"></tbody>
+        </table>
+      </section>
+    </aside>
+  </main>
+
+  <footer data-i18n="footer">
+    Vanilla JS + Canvas2D &middot; forward kinematics &middot; force-limited actuation &middot; friction-based hold &middot; no dependencies
+  </footer>
+
+  <script src="js/i18n.js"></script>
+  <script src="js/kinematics.js"></script>
+  <script src="js/hand.js"></script>
+  <script src="js/renderer.js"></script>
+  <script src="js/main.js"></script>
+</body>
+</html>

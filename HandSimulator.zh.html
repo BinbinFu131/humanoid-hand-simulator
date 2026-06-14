@@ -1,0 +1,1296 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Humanoid Robotic Hand Simulator</title>
+  <style>
+:root {
+  --bg: #0a0d14;
+  --card: #11161f;
+  --border: #232b3b;
+  --text: #d7deeb;
+  --muted: #8595b3;
+  --accent: #5ad1e6;
+  --secure: #4ade80;
+  --warn: #ffd166;
+  --drop: #ff6b6b;
+  --mono: ui-monospace, "SF Mono", "Cascadia Code", Menlo, "PingFang SC", "Microsoft YaHei", monospace;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  background:
+    radial-gradient(900px 600px at 30% 0%, rgba(36, 52, 80, 0.35), transparent 70%),
+    var(--bg);
+  color: var(--text);
+  font-family: -apple-system, "Segoe UI", Roboto, "Helvetica Neue", "PingFang SC", "Microsoft YaHei", sans-serif;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 24px 20px 12px;
+  position: relative;
+}
+
+.lang-toggle {
+  position: absolute;
+  top: 18px;
+  right: 20px;
+  z-index: 5;
+  padding: 6px 14px;
+  font-size: 12px;
+  font-weight: 600;
+  font-family: var(--mono);
+  background: #1a2230;
+  color: var(--accent);
+  border: 1px solid rgba(90, 209, 230, 0.4);
+  border-radius: 8px;
+  cursor: pointer;
+}
+.lang-toggle:hover { background: #222c3f; }
+
+header { text-align: center; margin-bottom: 18px; max-width: 760px; }
+h1 { margin: 0 0 6px; font-size: 22px; letter-spacing: 0.06em; font-weight: 700; }
+.subtitle { margin: 0; color: var(--muted); font-size: 13px; line-height: 1.5; }
+
+main {
+  display: flex;
+  gap: 16px;
+  align-items: stretch;
+  flex-wrap: wrap;
+  justify-content: center;
+  width: 100%;
+  max-width: 1100px;
+}
+
+.stage {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 8px;
+  max-width: 776px;
+  width: 100%;
+  flex: 1 1 560px;
+}
+
+/* canvas keeps its 760×520 logical coordinates and scales to fit the stage */
+canvas {
+  display: block;
+  border-radius: 8px;
+  width: 100%;
+  height: auto;
+  aspect-ratio: 760 / 520;
+}
+
+.panel {
+  width: 300px;
+  flex: 0 1 300px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.status-box, .controls, .telemetry {
+  background: linear-gradient(180deg, rgba(255,255,255,0.015), rgba(0,0,0,0)), var(--card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 14px;
+}
+
+.status-label, .telemetry-title {
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.18em;
+  color: var(--muted);
+}
+
+.status-value {
+  font-family: var(--mono);
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--accent);
+  margin: 6px 0 10px;
+  min-height: 22px;
+  transition: color 0.2s;
+}
+.status-value.ok { color: var(--secure); }
+.status-value.warn { color: var(--drop); }
+
+.status-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 12.5px;
+  color: var(--muted);
+  padding: 3px 0;
+}
+.status-row b { font-family: var(--mono); color: var(--text); font-weight: 600; }
+.status-row b.ok { color: var(--secure); }
+.status-row b.warn { color: var(--drop); }
+
+.meter {
+  height: 7px;
+  background: #1a2230;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  overflow: hidden;
+  margin: 5px 0 7px;
+}
+.meter-fill {
+  height: 100%;
+  width: 0;
+  background: var(--warn);
+  border-radius: 4px;
+  transition: width 0.08s linear, background 0.2s;
+}
+.meter-fill.secure { background: var(--secure); }
+
+.btn-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 12px; }
+
+button {
+  background: #1a2230;
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 9px 6px;
+  font-size: 12.5px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+}
+button:hover { background: #222c3f; border-color: #34415c; }
+button.primary {
+  background: rgba(90, 209, 230, 0.14);
+  border-color: rgba(90, 209, 230, 0.45);
+  color: var(--accent);
+}
+button.primary:hover { background: rgba(90, 209, 230, 0.24); }
+
+button.wide {
+  width: 100%;
+  margin-bottom: 2px;
+}
+
+.slider-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 12px;
+  color: var(--muted);
+  margin-top: 8px;
+}
+.slider-row span { width: 110px; flex-shrink: 0; }
+.slider-row em { font-family: var(--mono); font-style: normal; color: var(--accent); }
+input[type="range"] { flex: 1; accent-color: var(--accent); }
+
+.telemetry-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 6px;
+}
+.mini {
+  padding: 3px 8px;
+  font-size: 9px;
+  font-family: var(--mono);
+  letter-spacing: 0.1em;
+  border-radius: 6px;
+}
+
+.telemetry table { width: 100%; border-collapse: collapse; font-family: var(--mono); font-size: 11px; }
+.telemetry th {
+  text-align: left;
+  color: var(--muted);
+  font-weight: 600;
+  padding: 3px 4px;
+  border-bottom: 1px solid var(--border);
+  letter-spacing: 0.04em;
+}
+.telemetry td {
+  padding: 5px 4px;
+  border-bottom: 1px solid rgba(35, 43, 59, 0.5);
+  color: var(--text);
+  white-space: nowrap;
+}
+
+.led {
+  display: inline-block;
+  width: 9px; height: 9px;
+  border-radius: 50%;
+  background: #2a3346;
+  border: 1px solid #3a4763;
+}
+.led.on {
+  background: var(--warn);
+  border-color: var(--warn);
+  box-shadow: 0 0 8px rgba(255, 209, 102, 0.8);
+}
+
+footer {
+  margin-top: 16px;
+  color: var(--muted);
+  font-family: var(--mono);
+  font-size: 10.5px;
+  letter-spacing: 0.04em;
+  text-align: center;
+}
+
+/* stack the panel under the canvas on narrow screens */
+@media (max-width: 1000px) {
+  .panel { width: 100%; flex-basis: 100%; max-width: 776px; }
+  button { padding: 12px 6px; font-size: 14px; }
+  .telemetry table { font-size: 12px; }
+  input[type="range"] { height: 26px; }
+}
+
+/* keep the language toggle clear of the wrapped title on phones */
+@media (max-width: 560px) {
+  header { padding: 0 64px; margin-top: 4px; }
+  h1 { font-size: 19px; }
+  .lang-toggle { top: 12px; right: 12px; padding: 5px 11px; font-size: 11px; }
+}
+
+</style>
+</head>
+<body>
+<script>window.__FORCE_LANG__="zh";</script>
+  <button id="lang-toggle" class="lang-toggle">中文</button>
+
+  <header>
+    <h1 data-i18n="ui.title">Humanoid Robotic Hand Simulator</h1>
+    <p class="subtitle" data-i18n="ui.subtitle">14-DOF five-finger robotic hand &mdash; force-controlled grasping with contact sensing, grip-force regulation, variable payloads, and grasp success tracking</p>
+  </header>
+
+  <main>
+    <div class="stage">
+      <canvas id="scene"></canvas>
+    </div>
+
+    <aside class="panel">
+      <section class="status-box">
+        <div class="status-label" data-i18n="ui.ctrlstate">CONTROLLER STATE</div>
+        <div id="status" class="status-value">IDLE</div>
+        <div class="status-row"><span data-i18n="ui.contacts">Contacts</span><b id="contacts">0 / 5</b></div>
+        <div class="status-row"><span data-i18n="ui.gripforce">Grip force</span><b id="gripforce">0.0 N</b></div>
+        <div class="meter"><div id="gripbar" class="meter-fill"></div></div>
+        <div class="status-row"><span data-i18n="ui.hold">Hold</span><b id="hold">&mdash;</b></div>
+        <div class="status-row"><span data-i18n="ui.successrate">Success rate</span><b id="successrate">&mdash; (0/0)</b></div>
+        <div class="status-row"><span data-i18n="ui.payload">Payload</span><b id="payload">&mdash;</b></div>
+        <div class="status-row"><span data-i18n="ui.object">Object</span><b id="objstate">ON TABLE</b></div>
+      </section>
+
+      <section class="controls">
+        <div class="btn-grid">
+          <button id="btn-open" data-i18n="btn.open">Open Palm</button>
+          <button id="btn-fist" data-i18n="btn.fist">Make Fist</button>
+          <button id="btn-grasp" data-i18n="btn.grasp">Grasp Object</button>
+          <button id="btn-seq" class="primary" data-i18n="btn.seq">&#9654; Full Sequence</button>
+        </div>
+        <button id="btn-next" class="wide" data-i18n="btn.next">&#8635; Next Payload</button>
+        <label class="slider-row">
+          <span><span data-i18n="ctl.gripforce">Grip force</span> <em id="fsetval">14 N</em></span>
+          <input type="range" id="fset" min="2" max="26" value="14">
+        </label>
+        <label class="slider-row">
+          <span data-i18n="ctl.curl">Manual curl</span>
+          <input type="range" id="curl" min="0" max="100" value="0">
+        </label>
+        <label class="slider-row">
+          <span data-i18n="ctl.speed">Joint speed</span>
+          <input type="range" id="speed" min="40" max="300" value="140">
+        </label>
+      </section>
+
+      <section class="telemetry">
+        <div class="telemetry-head">
+          <span class="telemetry-title" data-i18n="tel.title">JOINT TELEMETRY</span>
+          <button id="reset-stats" class="mini" data-i18n="tel.reset">RESET</button>
+        </div>
+        <table>
+          <thead>
+            <tr>
+              <th data-i18n="th.finger">FINGER</th>
+              <th data-i18n="th.curl">CURL</th>
+              <th data-i18n="th.force">FORCE</th>
+              <th data-i18n="th.ct">CT</th>
+            </tr>
+          </thead>
+          <tbody id="telemetry-body"></tbody>
+        </table>
+      </section>
+    </aside>
+  </main>
+
+  <footer data-i18n="footer">
+    Vanilla JS + Canvas2D &middot; forward kinematics &middot; force-limited actuation &middot; friction-based hold &middot; no dependencies
+  </footer>
+
+  <script>
+'use strict';
+
+// Tiny i18n layer. Dynamic strings are looked up by key via t(key); static
+// HTML carries data-i18n="key" and is filled by applyStaticI18n().
+const I18N = {
+  en: {
+    'ui.title': 'Humanoid Robotic Hand Simulator',
+    'ui.subtitle': '14-DOF five-finger robotic hand — force-controlled grasping with contact sensing, grip-force regulation, variable payloads, and grasp success tracking',
+    'ui.ctrlstate': 'CONTROLLER STATE',
+    'ui.contacts': 'Contacts',
+    'ui.gripforce': 'Grip force',
+    'ui.hold': 'Hold',
+    'ui.successrate': 'Success rate',
+    'ui.payload': 'Payload',
+    'ui.object': 'Object',
+
+    'btn.open': 'Open Palm',
+    'btn.fist': 'Make Fist',
+    'btn.grasp': 'Grasp Object',
+    'btn.seq': '▶ Full Sequence',
+    'btn.next': '↻ Next Payload',
+
+    'ctl.gripforce': 'Grip force',
+    'ctl.curl': 'Manual curl',
+    'ctl.speed': 'Joint speed',
+
+    'tel.title': 'JOINT TELEMETRY',
+    'tel.reset': 'RESET',
+    'th.finger': 'FINGER',
+    'th.curl': 'CURL',
+    'th.force': 'FORCE',
+    'th.ct': 'CT',
+    'footer': 'Vanilla JS + Canvas2D · forward kinematics · force-limited actuation · friction-based hold · no dependencies',
+
+    'finger.THUMB': 'THUMB',
+    'finger.INDEX': 'INDEX',
+    'finger.MIDDLE': 'MIDDLE',
+    'finger.RING': 'RING',
+    'finger.PINKY': 'PINKY',
+
+    'st.IDLE': 'IDLE',
+    'st.MANUAL': 'MANUAL CONTROL',
+    'st.OPEN': 'OPENING PALM',
+    'st.FIST': 'MAKING FIST',
+    'st.REACH': 'PLANNING APPROACH',
+    'st.CLOSE': 'CLOSING GRIP',
+    'st.ADAPT': 'ADAPTIVE GRIP',
+    'st.LIFT': 'LIFTING OBJECT',
+    'st.LOWER': 'LOWERING',
+    'st.RELEASE': 'RELEASING',
+    'st.HOME': 'RETURNING HOME',
+    'st.HOLD': 'HOLDING OBJECT',
+
+    'hold.secure': 'SECURE',
+    'hold.slip': 'SLIP RISK',
+    'hold.none': '—',
+
+    'obj.ON_TABLE': 'ON TABLE',
+    'obj.IN_GRIP': 'IN GRIP',
+    'obj.FALLING': 'FALLING',
+
+    'flash.ok': 'GRASP OK ✓',
+    'flash.slip': 'SLIP — DROPPED',
+
+    'canvas.overlay': 'HRH-01 · 14 DOF · FORCE-CONTROLLED GRASP · SIDE VIEW',
+    'gauge.grip': 'GRIP',
+    'gauge.min': 'min',
+
+    'mat.FOAM': 'FOAM',
+    'mat.RUBBER': 'RUBBER',
+    'mat.WOOD': 'WOOD',
+    'mat.STEEL': 'STEEL',
+  },
+  zh: {
+    'ui.title': '仿人机械手模拟器',
+    'ui.subtitle': '14 自由度五指机械手 —— 力控抓取，含接触感知、抓握力调节、可变负载与抓取成功率统计',
+    'ui.ctrlstate': '控制器状态',
+    'ui.contacts': '接触点',
+    'ui.gripforce': '抓握力',
+    'ui.hold': '保持',
+    'ui.successrate': '成功率',
+    'ui.payload': '负载',
+    'ui.object': '物体',
+
+    'btn.open': '张开手掌',
+    'btn.fist': '握拳',
+    'btn.grasp': '抓取物体',
+    'btn.seq': '▶ 完整流程',
+    'btn.next': '↻ 更换负载',
+
+    'ctl.gripforce': '抓握力',
+    'ctl.curl': '手动卷曲',
+    'ctl.speed': '关节速度',
+
+    'tel.title': '关节遥测',
+    'tel.reset': '重置',
+    'th.finger': '手指',
+    'th.curl': '卷曲',
+    'th.force': '接触力',
+    'th.ct': '接触',
+    'footer': '原生 JS + Canvas2D · 正向运动学 · 力限驱动 · 摩擦保持 · 零依赖',
+
+    'finger.THUMB': '拇指',
+    'finger.INDEX': '食指',
+    'finger.MIDDLE': '中指',
+    'finger.RING': '无名指',
+    'finger.PINKY': '小指',
+
+    'st.IDLE': '空闲',
+    'st.MANUAL': '手动控制',
+    'st.OPEN': '张开手掌',
+    'st.FIST': '握拳中',
+    'st.REACH': '规划接近路径',
+    'st.CLOSE': '闭合抓取',
+    'st.ADAPT': '自适应抓握',
+    'st.LIFT': '举起物体',
+    'st.LOWER': '放下中',
+    'st.RELEASE': '释放中',
+    'st.HOME': '返回原位',
+    'st.HOLD': '保持物体',
+
+    'hold.secure': '牢固',
+    'hold.slip': '打滑风险',
+    'hold.none': '—',
+
+    'obj.ON_TABLE': '在台面',
+    'obj.IN_GRIP': '已抓取',
+    'obj.FALLING': '下落中',
+
+    'flash.ok': '抓取成功 ✓',
+    'flash.slip': '打滑 — 掉落',
+
+    'canvas.overlay': 'HRH-01 · 14 自由度 · 力控抓取 · 侧视图',
+    'gauge.grip': '抓握力',
+    'gauge.min': '下限',
+
+    'mat.FOAM': '泡沫',
+    'mat.RUBBER': '橡胶',
+    'mat.WOOD': '木质',
+    'mat.STEEL': '钢质',
+  },
+};
+
+let LANG = window.__FORCE_LANG__
+  || new URLSearchParams(location.search).get('lang')
+  || 'en';
+
+function t(k) {
+  const d = I18N[LANG] || I18N.en;
+  if (k in d) return d[k];
+  if (k in I18N.en) return I18N.en[k];
+  return k;
+}
+
+function applyStaticI18n() {
+  document.documentElement.lang = LANG === 'zh' ? 'zh-CN' : 'en';
+  document.title = t('ui.title');
+  document.querySelectorAll('[data-i18n]').forEach(el => {
+    el.textContent = t(el.getAttribute('data-i18n'));
+  });
+}
+
+function setLang(l) {
+  LANG = l;
+  applyStaticI18n();
+}
+
+</script>
+  <script>
+'use strict';
+
+const DEG = Math.PI / 180;
+const TAU = Math.PI * 2;
+
+// Logical drawing coordinates. The canvas backing store is scaled by the
+// device pixel ratio for crisp rendering, but all geometry uses these units.
+const VIEW_W = 760;
+const VIEW_H = 520;
+
+/**
+ * Planar forward kinematics for an open kinematic chain.
+ *
+ * base        {x, y}  world position of the root joint
+ * baseAngle   number  orientation of the chain root (radians)
+ * lengths     number[] segment lengths
+ * jointAngles number[] relative joint rotations (radians)
+ *
+ * Returns the chain points [root, j1, ..., tip]. Each point carries the
+ * absolute angle of the segment that leaves it.
+ */
+function forwardKinematics(base, baseAngle, lengths, jointAngles) {
+  const pts = [{ x: base.x, y: base.y, angle: baseAngle }];
+  let angle = baseAngle;
+  let x = base.x;
+  let y = base.y;
+  for (let i = 0; i < lengths.length; i++) {
+    angle += jointAngles[i];
+    pts[i].angle = angle;
+    x += Math.cos(angle) * lengths[i];
+    y += Math.sin(angle) * lengths[i];
+    pts.push({ x, y, angle });
+  }
+  return pts;
+}
+
+function clamp(v, lo, hi) {
+  return Math.min(hi, Math.max(lo, v));
+}
+
+function dist(ax, ay, bx, by) {
+  return Math.hypot(bx - ax, by - ay);
+}
+
+// Move `from` toward `to` by at most `maxStep`.
+function approach(from, to, maxStep) {
+  const d = to - from;
+  if (Math.abs(d) <= maxStep) return to;
+  return from + Math.sign(d) * maxStep;
+}
+
+function lerp(a, b, t) {
+  return a + (b - a) * t;
+}
+
+</script>
+  <script>
+'use strict';
+
+/**
+ * One articulated finger: a planar chain rooted on the palm.
+ *
+ * Actuation is a *force-limited position controller*, like a tendon-driven
+ * robotic finger:
+ *   - `target` is the commanded joint curl ∈ [0,1].
+ *   - `cmd` is the actuator position, ramped toward `target` but never pushed
+ *     more than `forceLimit / stiffness` past the actual joint — so the
+ *     contact force it can exert is capped by the commanded grip force.
+ *   - `curl` is the real joint angle. It tracks `cmd` in free motion, but
+ *     freezes the instant the finger contacts the object (in grasp mode), so
+ *     the hand conforms to the object instead of crushing through it.
+ *   - `force = stiffness · (cmd − curl)` while blocked: the actuator over-drive
+ *     against the stalled joint is the contact normal force (N).
+ */
+class Finger {
+  constructor(name, cfg) {
+    this.name = name;
+    this.baseOffset = cfg.baseOffset;            // relative to palm origin
+    this.baseAngle = cfg.baseAngle * DEG;
+    this.lengths = cfg.lengths;
+    this.widths = cfg.widths;                    // visual link widths
+    this.maxAngles = cfg.maxAngles.map(a => a * DEG);
+    this.maxForce = cfg.maxForce || 34;          // saturation force (N)
+    this.curl = 0;
+    this.cmd = 0;
+    this.target = 0;
+    this.contact = false;
+    this.force = 0;
+    this.points = [];
+  }
+
+  jointAngles() {
+    return this.maxAngles.map(a => a * this.curl);
+  }
+
+  step(origin, dt, speed, opts) {
+    const { contactStop, forceLimit, stiffness } = opts;
+
+    // Force ceiling: when closing, the actuator may lead the joint by at most
+    // forceLimit/stiffness, which caps the deliverable contact force.
+    const headroom = forceLimit / stiffness;
+    const cmdCeil = this.target > this.curl
+      ? Math.min(this.target, this.curl + headroom)
+      : this.target;
+    this.cmd = approach(this.cmd, cmdCeil, speed * dt);
+
+    if (contactStop && this.contact && this.cmd > this.curl) {
+      // Joint stalled against the object: hold position, build contact force.
+      this.force = clamp(stiffness * (this.cmd - this.curl), 0, this.maxForce);
+    } else {
+      // Free motion: joint follows the actuator, no contact force.
+      this.curl = clamp(this.cmd, 0, 1);
+      this.force = 0;
+    }
+
+    const base = {
+      x: origin.x + this.baseOffset.x,
+      y: origin.y + this.baseOffset.y,
+    };
+    this.points = forwardKinematics(base, this.baseAngle, this.lengths, this.jointAngles());
+  }
+
+  tip() {
+    return this.points[this.points.length - 1];
+  }
+
+  settled() {
+    return Math.abs(this.target - this.curl) < 0.01 && Math.abs(this.cmd - this.curl) < 0.01;
+  }
+}
+
+/**
+ * Five-finger hand: 4 fingers × 3 joints + thumb × 2 joints = 14 DOF,
+ * on a 2-DOF translational wrist carrier (reach / lift).
+ */
+class Hand {
+  constructor(origin) {
+    this.origin = { ...origin };
+    this.home = { ...origin };
+    this.moveTarget = { ...origin };
+    this.speed = 1.4;          // curl units per second
+    this.moveSpeed = 220;      // wrist translation, px per second
+    this.contactStop = false;  // grasp mode: stop each finger on contact
+    this.stiffness = 80;       // N per curl unit (tendon stiffness)
+    this.forceLimit = 14;      // commanded grip force ceiling (N)
+
+    this.fingers = [
+      new Finger('INDEX',  { baseOffset: { x: 0, y: -62 }, baseAngle: -8, lengths: [56, 40, 28], widths: [21, 17, 13], maxAngles: [78, 86, 44] }),
+      new Finger('MIDDLE', { baseOffset: { x: 0, y: -22 }, baseAngle: -2, lengths: [60, 45, 30], widths: [22, 18, 14], maxAngles: [78, 86, 44] }),
+      new Finger('RING',   { baseOffset: { x: 0, y: 18 },  baseAngle: 3,  lengths: [56, 42, 28], widths: [21, 17, 13], maxAngles: [78, 86, 44] }),
+      new Finger('PINKY',  { baseOffset: { x: 0, y: 56 },  baseAngle: 0,  lengths: [44, 33, 22], widths: [18, 15, 12], maxAngles: [78, 86, 44] }),
+    ];
+    this.thumb = new Finger('THUMB', {
+      baseOffset: { x: -14, y: 80 }, baseAngle: 34,
+      lengths: [50, 40], widths: [24, 19], maxAngles: [-34, -40], maxForce: 38,
+    });
+    this.all = [this.thumb, ...this.fingers];
+  }
+
+  setTargets(curl) {
+    for (const f of this.all) f.target = curl;
+  }
+
+  moveTo(x, y) {
+    this.moveTarget = { x, y };
+  }
+
+  step(dt) {
+    const dx = this.moveTarget.x - this.origin.x;
+    const dy = this.moveTarget.y - this.origin.y;
+    const d = Math.hypot(dx, dy);
+    const maxMove = this.moveSpeed * dt;
+    if (d > 0 && d > maxMove) {
+      this.origin.x += (dx / d) * maxMove;
+      this.origin.y += (dy / d) * maxMove;
+    } else {
+      this.origin.x = this.moveTarget.x;
+      this.origin.y = this.moveTarget.y;
+    }
+    const opts = { contactStop: this.contactStop, forceLimit: this.forceLimit, stiffness: this.stiffness };
+    for (const f of this.all) f.step(this.origin, dt, this.speed, opts);
+  }
+
+  atMoveTarget() {
+    return dist(this.origin.x, this.origin.y, this.moveTarget.x, this.moveTarget.y) < 0.5;
+  }
+
+  settled() {
+    return this.all.every(f => f.settled() || (this.contactStop && f.contact));
+  }
+
+  contactCount() {
+    return this.all.filter(f => f.contact).length;
+  }
+
+  totalForce() {
+    let s = 0;
+    for (const f of this.all) s += f.force;
+    return s;
+  }
+}
+
+</script>
+  <script>
+'use strict';
+
+const COL = {
+  secure: '#4ade80',
+  warn:   '#ffd166',
+  drop:   '#ff6b6b',
+  accent: '#5ad1e6',
+};
+
+// font stack with CJK fallbacks so canvas labels render in Chinese too
+function fmono(px) {
+  return px + 'px ui-monospace, "SF Mono", "PingFang SC", "Microsoft YaHei", monospace';
+}
+
+function roundRect(ctx, x, y, w, h, r) {
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.arcTo(x + w, y, x + w, y + h, r);
+  ctx.arcTo(x + w, y + h, x, y + h, r);
+  ctx.arcTo(x, y + h, x, y, r);
+  ctx.arcTo(x, y, x + w, y, r);
+  ctx.closePath();
+}
+
+// amber → red as a force fraction t∈[0,1] climbs
+function forceColor(frac) {
+  const g = Math.round(lerp(209, 107, clamp(frac, 0, 1)));
+  const b = Math.round(lerp(102, 107, clamp(frac, 0, 1)));
+  return `rgb(255, ${g}, ${b})`;
+}
+
+function drawBackdrop(ctx) {
+  const g = ctx.createRadialGradient(VIEW_W * 0.42, VIEW_H * 0.4, 60, VIEW_W * 0.42, VIEW_H * 0.4, VIEW_W * 0.8);
+  g.addColorStop(0, 'rgba(28, 40, 62, 0.55)');
+  g.addColorStop(1, 'rgba(10, 13, 20, 0)');
+  ctx.fillStyle = g;
+  ctx.fillRect(0, 0, VIEW_W, VIEW_H);
+
+  ctx.strokeStyle = 'rgba(120, 140, 180, 0.06)';
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  for (let x = 0; x <= VIEW_W; x += 40) { ctx.moveTo(x, 0); ctx.lineTo(x, VIEW_H); }
+  for (let y = 0; y <= VIEW_H; y += 40) { ctx.moveTo(0, y); ctx.lineTo(VIEW_W, y); }
+  ctx.stroke();
+}
+
+function drawPedestal(ctx, tableY) {
+  const x0 = 388, x1 = 600;
+  ctx.fillStyle = '#131825';
+  ctx.fillRect(x0, tableY, x1 - x0, 16);
+  ctx.strokeStyle = '#2a3346';
+  ctx.strokeRect(x0 + 0.5, tableY + 0.5, x1 - x0 - 1, 15);
+  ctx.strokeStyle = 'rgba(90, 209, 230, 0.35)';
+  ctx.beginPath();
+  ctx.moveTo(x0, tableY + 0.5);
+  ctx.lineTo(x1, tableY + 0.5);
+  ctx.stroke();
+}
+
+function drawBall(ctx, ball, tableY) {
+  const height = tableY - (ball.y + ball.r);
+  const sh = clamp(1 - height / 260, 0.15, 1);
+  ctx.fillStyle = `rgba(0, 0, 0, ${0.35 * sh})`;
+  ctx.beginPath();
+  ctx.ellipse(ball.x, tableY + 8, ball.r * (0.55 + 0.45 * sh), 8 * sh + 2, 0, 0, TAU);
+  ctx.fill();
+
+  const c = ball.cols;
+  const g = ctx.createRadialGradient(
+    ball.x - ball.r * 0.35, ball.y - ball.r * 0.35, ball.r * 0.15,
+    ball.x, ball.y, ball.r
+  );
+  g.addColorStop(0, c[0]);
+  g.addColorStop(0.6, c[1]);
+  g.addColorStop(1, c[2]);
+  ctx.beginPath();
+  ctx.arc(ball.x, ball.y, ball.r, 0, TAU);
+  ctx.fillStyle = g;
+  ctx.fill();
+  ctx.lineWidth = 2;
+  ctx.strokeStyle = ball.held ? 'rgba(255, 209, 102, 0.85)' : 'rgba(0, 0, 0, 0.25)';
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.arc(ball.x - ball.r * 0.34, ball.y - ball.r * 0.36, ball.r * 0.16, 0, TAU);
+  ctx.fillStyle = 'rgba(255, 255, 255, 0.35)';
+  ctx.fill();
+
+  // payload label + weight
+  ctx.fillStyle = 'rgba(255, 255, 255, 0.85)';
+  ctx.font = fmono(11);
+  ctx.textAlign = 'center';
+  ctx.fillText(t('mat.' + ball.key) + ' · ' + ball.weight + 'N', ball.x, ball.y + ball.r + 20);
+  ctx.textAlign = 'left';
+}
+
+function drawArmAndPalm(ctx, hand) {
+  const o = hand.origin;
+  ctx.fillStyle = '#2b3346';
+  roundRect(ctx, o.x - 330, o.y - 40, 215, 80, 14);
+  ctx.fill();
+  ctx.strokeStyle = '#3c465e';
+  ctx.lineWidth = 2;
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.arc(o.x - 116, o.y, 24, 0, TAU);
+  ctx.fillStyle = '#1a2130';
+  ctx.fill();
+  ctx.strokeStyle = 'rgba(90, 209, 230, 0.5)';
+  ctx.stroke();
+  ctx.fillStyle = '#39435a';
+  roundRect(ctx, o.x - 126, o.y - 94, 132, 188, 18);
+  ctx.fill();
+  ctx.strokeStyle = '#4c5873';
+  ctx.stroke();
+  ctx.strokeStyle = 'rgba(90, 209, 230, 0.18)';
+  roundRect(ctx, o.x - 112, o.y - 80, 104, 160, 12);
+  ctx.stroke();
+  ctx.fillStyle = 'rgba(140, 160, 200, 0.5)';
+  ctx.font = fmono(10);
+  ctx.fillText('HRH-01', o.x - 104, o.y + 70);
+}
+
+function drawFinger(ctx, f, bodyColor, outlineColor) {
+  const pts = f.points;
+  ctx.lineCap = 'round';
+  for (let i = 0; i < pts.length - 1; i++) {
+    const a = pts[i], b = pts[i + 1];
+    ctx.beginPath();
+    ctx.moveTo(a.x, a.y);
+    ctx.lineTo(b.x, b.y);
+    ctx.lineWidth = f.widths[i] + 4;
+    ctx.strokeStyle = outlineColor;
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(a.x, a.y);
+    ctx.lineTo(b.x, b.y);
+    ctx.lineWidth = f.widths[i];
+    ctx.strokeStyle = bodyColor;
+    ctx.stroke();
+  }
+  for (let i = 0; i < pts.length - 1; i++) {
+    ctx.beginPath();
+    ctx.arc(pts[i].x, pts[i].y, f.widths[i] * 0.34, 0, TAU);
+    ctx.fillStyle = '#10151f';
+    ctx.fill();
+    ctx.lineWidth = 1.5;
+    ctx.strokeStyle = 'rgba(90, 209, 230, 0.55)';
+    ctx.stroke();
+  }
+  const tip = pts[pts.length - 1];
+  if (f.contact) {
+    const frac = clamp(f.force / f.maxForce, 0, 1);
+    const col = forceColor(frac);
+    ctx.save();
+    ctx.strokeStyle = col;
+    ctx.globalAlpha = 0.25 + 0.5 * frac;
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.arc(tip.x, tip.y, 6 + frac * 9, 0, TAU);
+    ctx.stroke();
+    ctx.restore();
+    ctx.save();
+    ctx.shadowColor = col;
+    ctx.shadowBlur = 10 + frac * 14;
+    ctx.beginPath();
+    ctx.arc(tip.x, tip.y, 5, 0, TAU);
+    ctx.fillStyle = col;
+    ctx.fill();
+    ctx.restore();
+  } else {
+    ctx.beginPath();
+    ctx.arc(tip.x, tip.y, 3.4, 0, TAU);
+    ctx.fillStyle = '#8fa0bf';
+    ctx.fill();
+  }
+}
+
+function drawForceGauge(ctx, hud) {
+  const x = VIEW_W - 30, w = 13;
+  const y0 = 72, y1 = VIEW_H - 48;
+  const h = y1 - y0;
+  roundRect(ctx, x, y0, w, h, 6);
+  ctx.fillStyle = 'rgba(20, 26, 38, 0.9)';
+  ctx.fill();
+  ctx.strokeStyle = '#2a3346';
+  ctx.lineWidth = 1;
+  ctx.stroke();
+
+  const frac = clamp(hud.gripForce / hud.gaugeMax, 0, 1);
+  const fh = h * frac;
+  const col = hud.holdSecure ? COL.secure : (hud.gripForce > 0.5 ? COL.warn : '#3a4763');
+  if (fh > 1) {
+    roundRect(ctx, x, y1 - fh, w, fh, 6);
+    ctx.fillStyle = col;
+    ctx.fill();
+  }
+  // required-force threshold for the current payload
+  const ty = y1 - h * clamp(hud.requiredForce / hud.gaugeMax, 0, 1);
+  ctx.strokeStyle = COL.drop;
+  ctx.setLineDash([4, 3]);
+  ctx.beginPath();
+  ctx.moveTo(x - 5, ty);
+  ctx.lineTo(x + w + 5, ty);
+  ctx.stroke();
+  ctx.setLineDash([]);
+
+  ctx.fillStyle = 'rgba(140, 160, 200, 0.7)';
+  ctx.font = fmono(9);
+  ctx.textAlign = 'right';
+  ctx.fillText(t('gauge.grip'), x + w, y0 - 8);
+  ctx.fillText(hud.gripForce.toFixed(0) + 'N', x + w, y1 + 14);
+  ctx.fillStyle = 'rgba(255, 107, 107, 0.85)';
+  ctx.fillText(t('gauge.min'), x - 9, ty + 3);
+  ctx.textAlign = 'left';
+}
+
+function drawScene(ctx, hand, ball, env) {
+  ctx.clearRect(0, 0, VIEW_W, VIEW_H);
+  drawBackdrop(ctx);
+  drawPedestal(ctx, env.tableY);
+  drawArmAndPalm(ctx, hand);
+
+  const [index, middle, ring, pinky] = hand.fingers;
+  drawFinger(ctx, pinky,  '#39455b', '#1d2433');
+  drawFinger(ctx, ring,   '#424e66', '#1d2433');
+  drawFinger(ctx, middle, '#4b576f', '#202839');
+  drawFinger(ctx, index,  '#4b576f', '#202839');
+  drawBall(ctx, ball, env.tableY);
+  drawFinger(ctx, hand.thumb, '#566380', '#222a3c');
+
+  drawForceGauge(ctx, env);
+
+  ctx.fillStyle = 'rgba(140, 160, 200, 0.55)';
+  ctx.font = fmono(11);
+  ctx.fillText(t('canvas.overlay'), 16, 26);
+}
+
+</script>
+  <script>
+'use strict';
+
+const canvas = document.getElementById('scene');
+const ctx = canvas.getContext('2d');
+
+// ---------------------------------------------------------------- config
+const CFG = {
+  TABLE_Y: 384,
+  HOME: { x: 200, y: 250 },
+  GRASP_OFFSET_X: -98,   // wrist x relative to the object when grasping
+  GRASP_DY: 112,         // wrist sits this far above the object centre
+  LIFT_Y: 142,
+  GRAVITY: 1600,
+  FRICTION: 0.5,         // effective grip friction coefficient
+  GAUGE_MAX: 100,        // N — full scale of the grip-force gauge
+};
+
+// payload library — weight scales with material, so a fixed grip force holds
+// the light ones but slips on the heavy ones (drives the success-rate demo)
+const PAYLOADS = [
+  { key: 'FOAM',   r: 38, weight: 6,  cols: ['#bdf0d4', '#5cc295', '#2f7d5e'] },
+  { key: 'RUBBER', r: 44, weight: 14, cols: ['#ffb45e', '#e2702a', '#a8431a'] },
+  { key: 'WOOD',   r: 42, weight: 20, cols: ['#e8c98f', '#b98a4a', '#7d5a2f'] },
+  { key: 'STEEL',  r: 40, weight: 30, cols: ['#e6edf6', '#9aa6b8', '#5b6677'] },
+];
+
+const hand = new Hand(CFG.HOME);
+const ball = { x: 488, r: 44, y: 0, vy: 0, held: false, offset: { x: 0, y: 0 }, key: 'RUBBER', weight: 14, cols: PAYLOADS[1].cols };
+let payloadIdx = 1;
+
+function restY() { return CFG.TABLE_Y - ball.r; }
+function requiredForce() { return ball.weight / CFG.FRICTION; }
+
+function loadPayload(idx) {
+  payloadIdx = idx;
+  const p = PAYLOADS[idx];
+  ball.key = p.key; ball.r = p.r; ball.weight = p.weight; ball.cols = p.cols;
+  ball.x = 488; ball.y = restY(); ball.vy = 0; ball.held = false;
+}
+function nextPayload() {
+  if (ball.held) return;
+  let i = payloadIdx;
+  while (i === payloadIdx) i = Math.floor(Math.random() * PAYLOADS.length);
+  loadPayload(i);
+}
+loadPayload(1);
+
+// ---------------------------------------------------------------- ui refs
+const ui = {
+  status: document.getElementById('status'),
+  contacts: document.getElementById('contacts'),
+  gripforce: document.getElementById('gripforce'),
+  gripbar: document.getElementById('gripbar'),
+  hold: document.getElementById('hold'),
+  successrate: document.getElementById('successrate'),
+  payload: document.getElementById('payload'),
+  objstate: document.getElementById('objstate'),
+  curl: document.getElementById('curl'),
+  speed: document.getElementById('speed'),
+  fset: document.getElementById('fset'),
+  fsetval: document.getElementById('fsetval'),
+  langToggle: document.getElementById('lang-toggle'),
+};
+
+const flash = { key: '', kind: '', until: 0 };
+function notify(key, kind) { flash.key = key; flash.kind = kind || ''; flash.until = performance.now() + 1400; }
+function setStatus(key) { ui.status.dataset.key = key; }
+
+// ---------------------------------------------------------------- stats
+const stats = { attempts: 0, successes: 0, pending: false };
+function beginAttempt() { stats.attempts++; stats.pending = true; }
+function resolveAttempt(ok) {
+  if (!stats.pending) return;
+  stats.pending = false;
+  if (ok) { stats.successes++; notify('flash.ok', 'ok'); }
+  else { notify('flash.slip', 'warn'); }
+}
+
+function holdSecure() {
+  return hand.thumb.contact && hand.totalForce() * CFG.FRICTION >= ball.weight;
+}
+function graspSecured() {
+  return hand.thumb.contact && hand.contactCount() >= 2;
+}
+
+// ---------------------------------------------------------------- sequencer
+const seq = { steps: [], i: -1, t: 0 };
+
+function runSteps(steps) { seq.steps = steps; seq.i = -1; nextStep(); }
+function nextStep() {
+  seq.i++;
+  seq.t = 0;
+  if (seq.i >= seq.steps.length) {
+    seq.steps = [];
+    setStatus(ball.held ? 'st.HOLD' : 'st.IDLE');
+    return;
+  }
+  const s = seq.steps[seq.i];
+  if (s.label) setStatus(s.label);
+  if (s.enter) s.enter();
+}
+
+const Steps = {
+  open: () => ({
+    label: 'st.OPEN',
+    enter() { hand.contactStop = false; hand.setTargets(0); },
+    done: () => hand.settled(),
+  }),
+  fist: () => ({
+    label: 'st.FIST',
+    enter() { hand.contactStop = false; hand.setTargets(1); },
+    done: () => hand.settled(),
+  }),
+  pause: s => ({ done: t => t >= s }),
+  reach: () => ({
+    label: 'st.REACH',
+    enter() { hand.contactStop = true; hand.moveTo(ball.x + CFG.GRASP_OFFSET_X, ball.y - CFG.GRASP_DY); },
+    done: () => hand.atMoveTarget(),
+  }),
+  grasp: () => ({
+    label: 'st.CLOSE',
+    enter() { hand.contactStop = true; hand.setTargets(1); },
+    done: t => (graspSecured() && holdSecure() && t > 0.3) || t > 3.2,
+  }),
+  attach: () => ({
+    label: 'st.ADAPT',
+    enter() {
+      beginAttempt();
+      if (graspSecured()) {
+        ball.held = true;
+        ball.offset.x = ball.x - hand.origin.x;
+        ball.offset.y = ball.y - hand.origin.y;
+      } else {
+        resolveAttempt(false);
+      }
+    },
+    done: t => t >= 0.35,
+  }),
+  lift: () => ({
+    label: 'st.LIFT',
+    enter() { if (ball.held) hand.moveTo(hand.origin.x, CFG.LIFT_Y); },
+    done() {
+      if (hand.atMoveTarget()) { resolveAttempt(ball.held); return true; }
+      return false;
+    },
+  }),
+  lower: () => ({
+    label: 'st.LOWER',
+    enter() { if (ball.held) hand.moveTo(hand.origin.x, restY() - CFG.GRASP_DY); },
+    done: () => hand.atMoveTarget(),
+  }),
+  release: () => ({
+    label: 'st.RELEASE',
+    enter() { hand.contactStop = false; hand.setTargets(0); },
+    done: () => hand.settled(),
+  }),
+  home: () => ({
+    label: 'st.HOME',
+    enter() { hand.moveTo(hand.home.x, hand.home.y); },
+    done: () => hand.atMoveTarget(),
+  }),
+  swap: () => ({ enter() { nextPayload(); }, done: () => true }),
+};
+
+// ---------------------------------------------------------------- controls
+document.getElementById('btn-open').addEventListener('click', () => {
+  if (ball.held) runSteps([Steps.lower(), Steps.release(), Steps.home()]);
+  else runSteps([Steps.open()]);
+});
+document.getElementById('btn-fist').addEventListener('click', () => {
+  const pre = ball.held ? [Steps.lower(), Steps.release(), Steps.home()] : [];
+  runSteps([...pre, Steps.fist()]);
+});
+document.getElementById('btn-grasp').addEventListener('click', () => {
+  if (ball.held) return;
+  runSteps([Steps.open(), Steps.reach(), Steps.grasp(), Steps.attach(), Steps.lift()]);
+});
+document.getElementById('btn-seq').addEventListener('click', () => {
+  const pre = ball.held ? [Steps.lower(), Steps.release()] : [];
+  runSteps([
+    ...pre,
+    Steps.home(), Steps.open(), Steps.pause(0.3),
+    Steps.fist(), Steps.pause(0.6),
+    Steps.open(), Steps.pause(0.3),
+    Steps.reach(), Steps.grasp(), Steps.attach(),
+    Steps.lift(), Steps.pause(0.9),
+    Steps.lower(), Steps.release(), Steps.home(),
+    Steps.swap(),
+  ]);
+});
+document.getElementById('btn-next').addEventListener('click', () => {
+  if (ball.held || seq.steps.length) return;
+  nextPayload();
+});
+
+ui.curl.addEventListener('input', () => {
+  seq.steps = [];
+  setStatus('st.MANUAL');
+  hand.contactStop = true;
+  hand.setTargets(ui.curl.value / 100);
+});
+ui.speed.addEventListener('input', () => { hand.speed = ui.speed.value / 100; });
+ui.fset.addEventListener('input', () => {
+  hand.forceLimit = +ui.fset.value;
+  ui.fsetval.textContent = ui.fset.value + ' N';
+});
+document.getElementById('reset-stats').addEventListener('click', () => {
+  stats.attempts = 0; stats.successes = 0; stats.pending = false;
+});
+ui.langToggle.addEventListener('click', () => {
+  setLang(LANG === 'en' ? 'zh' : 'en');
+  ui.langToggle.textContent = LANG === 'en' ? '中文' : 'EN';
+});
+
+// ---------------------------------------------------------------- physics
+function updateContacts() {
+  for (const f of hand.all) {
+    f.contact = false;
+    const pts = f.points;
+    for (let i = Math.max(1, pts.length - 2); i < pts.length; i++) {
+      const w = f.widths[Math.min(i - 1, f.widths.length - 1)];
+      if (dist(pts[i].x, pts[i].y, ball.x, ball.y) <= ball.r + w / 2 + 2) {
+        f.contact = true;
+        break;
+      }
+    }
+  }
+}
+
+function updateBall(dt) {
+  if (ball.held && (!graspSecured() || !holdSecure())) {
+    ball.held = false;
+    resolveAttempt(false);
+  }
+
+  if (ball.held) {
+    ball.x = hand.origin.x + ball.offset.x;
+    ball.y = hand.origin.y + ball.offset.y;
+    ball.vy = 0;
+  } else if (ball.y < restY() || ball.vy !== 0) {
+    ball.vy += CFG.GRAVITY * dt;
+    ball.y += ball.vy * dt;
+    if (ball.y >= restY()) {
+      ball.y = restY();
+      ball.vy = Math.abs(ball.vy) > 120 ? -ball.vy * 0.32 : 0;
+    }
+  }
+}
+
+// ---------------------------------------------------------------- telemetry
+const telemetryRows = hand.all.map(f => {
+  const tr = document.createElement('tr');
+  const name = document.createElement('td');
+  const curl = document.createElement('td');
+  const force = document.createElement('td');
+  const ct = document.createElement('td');
+  const led = document.createElement('span');
+  led.className = 'led';
+  ct.appendChild(led);
+  tr.append(name, curl, force, ct);
+  document.getElementById('telemetry-body').appendChild(tr);
+  return { f, name, curl, force, led };
+});
+
+function updateTelemetry() {
+  for (const row of telemetryRows) {
+    row.name.textContent = t('finger.' + row.f.name);
+    row.curl.textContent = Math.round(row.f.curl * 100) + '%';
+    row.force.textContent = row.f.force.toFixed(1) + ' N';
+    row.led.classList.toggle('on', row.f.contact);
+  }
+  const total = hand.totalForce();
+  ui.contacts.textContent = `${hand.contactCount()} / 5`;
+  ui.gripforce.textContent = total.toFixed(1) + ' N';
+  ui.gripbar.style.width = clamp((total / CFG.GAUGE_MAX) * 100, 0, 100) + '%';
+
+  const secure = holdSecure();
+  ui.gripbar.classList.toggle('secure', secure);
+  if (total < 0.5) { ui.hold.textContent = t('hold.none'); ui.hold.className = ''; }
+  else if (secure) { ui.hold.textContent = t('hold.secure'); ui.hold.className = 'ok'; }
+  else { ui.hold.textContent = t('hold.slip'); ui.hold.className = 'warn'; }
+
+  const rate = stats.attempts ? Math.round((stats.successes / stats.attempts) * 100) : 0;
+  ui.successrate.textContent = stats.attempts
+    ? `${rate}% (${stats.successes}/${stats.attempts})`
+    : '— (0/0)';
+
+  ui.payload.textContent = `${t('mat.' + ball.key)} · ${ball.weight} N`;
+  ui.objstate.textContent = ball.held
+    ? t('obj.IN_GRIP')
+    : (ball.y >= restY() - 0.5 ? t('obj.ON_TABLE') : t('obj.FALLING'));
+
+  const now = performance.now();
+  if (now < flash.until) {
+    ui.status.textContent = t(flash.key);
+    ui.status.className = 'status-value ' + flash.kind;
+  } else {
+    ui.status.textContent = t(ui.status.dataset.key || 'st.IDLE');
+    ui.status.className = 'status-value';
+  }
+}
+
+// ---------------------------------------------------------------- canvas / loop
+function fitCanvas() {
+  const dpr = window.devicePixelRatio || 1;
+  canvas.width = VIEW_W * dpr;
+  canvas.height = VIEW_H * dpr;
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+}
+window.addEventListener('resize', fitCanvas);
+fitCanvas();
+
+let last = performance.now();
+let frameCount = 0;
+
+function frame(now) {
+  const dt = clamp((now - last) / 1000, 0, 0.05);
+  last = now;
+
+  if (seq.steps.length) {
+    seq.t += dt;
+    if (seq.steps[seq.i].done(seq.t)) nextStep();
+  }
+
+  hand.step(dt);
+  updateBall(dt);
+  updateContacts();
+
+  drawScene(ctx, hand, ball, {
+    tableY: CFG.TABLE_Y,
+    gripForce: hand.totalForce(),
+    requiredForce: requiredForce(),
+    gaugeMax: CFG.GAUGE_MAX,
+    holdSecure: holdSecure(),
+  });
+
+  if ((frameCount++ & 3) === 0) updateTelemetry();
+  requestAnimationFrame(frame);
+}
+
+// ---------------------------------------------------------------- boot
+applyStaticI18n();
+ui.langToggle.textContent = LANG === 'en' ? '中文' : 'EN';
+setStatus('st.IDLE');
+ui.fsetval.textContent = ui.fset.value + ' N';
+hand.forceLimit = +ui.fset.value;
+hand.step(0);
+updateContacts();
+updateTelemetry();
+requestAnimationFrame(frame);
+
+</script>
+</body>
+</html>
