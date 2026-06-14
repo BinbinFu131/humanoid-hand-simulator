@@ -139,11 +139,79 @@ const I18N = {
     'mat.WOOD': '木质',
     'mat.STEEL': '钢质',
   },
+  de: {
+    'ui.title': 'Humanoider Roboterhand-Simulator',
+    'ui.subtitle': '14-DOF fünffingrige Roboterhand — kraftgeregeltes Greifen mit Kontaktsensorik, Greifkraftregelung, variablen Lasten und Erfolgsraten-Tracking',
+    'ui.ctrlstate': 'REGLERSTATUS',
+    'ui.contacts': 'Kontakte',
+    'ui.gripforce': 'Greifkraft',
+    'ui.hold': 'Halt',
+    'ui.successrate': 'Erfolgsrate',
+    'ui.payload': 'Last',
+    'ui.object': 'Objekt',
+
+    'btn.open': 'Hand öffnen',
+    'btn.fist': 'Faust ballen',
+    'btn.grasp': 'Objekt greifen',
+    'btn.seq': '▶ Komplettablauf',
+    'btn.next': '↻ Nächste Last',
+
+    'ctl.gripforce': 'Greifkraft',
+    'ctl.curl': 'Krümmung',
+    'ctl.speed': 'Gelenktempo',
+
+    'tel.title': 'GELENK-TELEMETRIE',
+    'tel.reset': 'RESET',
+    'th.finger': 'FINGER',
+    'th.curl': 'KRÜMM.',
+    'th.force': 'KRAFT',
+    'th.ct': 'KT',
+    'footer': 'Vanilla JS + Canvas2D · Vorwärtskinematik · kraftbegrenzte Aktuierung · reibungsbasierter Halt · keine Abhängigkeiten',
+
+    'finger.THUMB': 'DAUMEN',
+    'finger.INDEX': 'ZEIGE',
+    'finger.MIDDLE': 'MITTEL',
+    'finger.RING': 'RING',
+    'finger.PINKY': 'KLEIN',
+
+    'st.IDLE': 'BEREIT',
+    'st.MANUAL': 'MANUELLE STEUERUNG',
+    'st.OPEN': 'HAND ÖFFNEN',
+    'st.FIST': 'FAUST BALLEN',
+    'st.REACH': 'ANNÄHERUNG PLANEN',
+    'st.CLOSE': 'GRIFF SCHLIESSEN',
+    'st.ADAPT': 'ADAPTIVER GRIFF',
+    'st.LIFT': 'OBJEKT ANHEBEN',
+    'st.LOWER': 'ABSENKEN',
+    'st.RELEASE': 'LOSLASSEN',
+    'st.HOME': 'ZURÜCK ZUR BASIS',
+    'st.HOLD': 'OBJEKT GEHALTEN',
+
+    'hold.secure': 'SICHER',
+    'hold.slip': 'RUTSCHGEFAHR',
+    'hold.none': '—',
+
+    'obj.ON_TABLE': 'AUF TISCH',
+    'obj.IN_GRIP': 'IM GRIFF',
+    'obj.FALLING': 'FÄLLT',
+
+    'flash.ok': 'GRIFF OK ✓',
+    'flash.slip': 'ABGERUTSCHT ✗',
+
+    'canvas.overlay': 'HRH-01 · 14 DOF · KRAFTGEREGELTER GRIFF · SEITENANSICHT',
+    'gauge.grip': 'KRAFT',
+    'gauge.min': 'min',
+
+    'mat.FOAM': 'SCHAUM',
+    'mat.RUBBER': 'GUMMI',
+    'mat.WOOD': 'HOLZ',
+    'mat.STEEL': 'STAHL',
+  },
 };
 
 let LANG = window.__FORCE_LANG__
   || new URLSearchParams(location.search).get('lang')
-  || 'en';
+  || 'de';
 
 function t(k) {
   const d = I18N[LANG] || I18N.en;
@@ -153,7 +221,7 @@ function t(k) {
 }
 
 function applyStaticI18n() {
-  document.documentElement.lang = LANG === 'zh' ? 'zh-CN' : 'en';
+  document.documentElement.lang = LANG === 'zh' ? 'zh-CN' : (LANG === 'de' ? 'de' : 'en');
   document.title = t('ui.title');
   document.querySelectorAll('[data-i18n]').forEach(el => {
     el.textContent = t(el.getAttribute('data-i18n'));

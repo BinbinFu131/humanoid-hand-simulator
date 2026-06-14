@@ -208,8 +208,8 @@ document.getElementById('reset-stats').addEventListener('click', () => {
   stats.attempts = 0; stats.successes = 0; stats.pending = false;
 });
 ui.langToggle.addEventListener('click', () => {
-  setLang(LANG === 'en' ? 'zh' : 'en');
-  ui.langToggle.textContent = LANG === 'en' ? '中文' : 'EN';
+  setLang(LANG === 'zh' ? 'de' : 'zh');
+  ui.langToggle.textContent = LANG === 'zh' ? 'Deutsch' : '中文';
 });
 
 // ---------------------------------------------------------------- physics
@@ -340,7 +340,7 @@ function frame(now) {
 
 // ---------------------------------------------------------------- boot
 applyStaticI18n();
-ui.langToggle.textContent = LANG === 'en' ? '中文' : 'EN';
+ui.langToggle.textContent = LANG === 'zh' ? 'Deutsch' : '中文';
 setStatus('st.IDLE');
 ui.fsetval.textContent = ui.fset.value + ' N';
 hand.forceLimit = +ui.fset.value;

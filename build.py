@@ -3,8 +3,8 @@
 (open directly on a phone — no server, no files).
 
 Emits:
-  HandSimulator.html     — defaults to English (toggle to 中文)
-  HandSimulator.zh.html  — defaults to 中文 (toggle to English)
+  HandSimulator.html     — defaults to Deutsch (toggle to 中文)
+  HandSimulator.zh.html  — defaults to 中文 (toggle to Deutsch)
 """
 import pathlib
 
@@ -18,10 +18,10 @@ for name in ['i18n', 'kinematics', 'hand', 'renderer', 'main']:
     js = (root / f'js/{name}.js').read_text()
     base = base.replace(f'<script src="js/{name}.js"></script>', '<script>\n' + js + '\n</script>')
 
-# English (default)
-en = root / 'HandSimulator.html'
-en.write_text(base)
-print(f'wrote {en} ({len(base)} bytes)')
+# German (default)
+de = root / 'HandSimulator.html'
+de.write_text(base)
+print(f'wrote {de} ({len(base)} bytes)')
 
 # Chinese mirror: force the default language before any script runs
 zh_html = base.replace('<body>', '<body>\n<script>window.__FORCE_LANG__="zh";</script>', 1)
