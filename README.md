@@ -8,16 +8,21 @@ freedom** (4 fingers × 3 revolute joints + thumb × 2 revolute joints) on a
 2-DOF translational wrist carrier, and demonstrates the canonical manipulation
 sequence: **open palm → fist → grasp object → lift**.
 
-## Demo
+## Live demo
 
-Open `index.html` in any modern browser — no build step, no server required.
-Add `?lang=zh` for Chinese, or use the in-page language toggle.
+**▶ https://binbinfu131.github.io/humanoid-hand-simulator/**
+
+Runs entirely in the browser (desktop & mobile). The UI ships in **German and
+Chinese** — it opens in German by default; use the top-right toggle, or add
+`?lang=zh` / `?lang=de` to the URL.
+
+Or open `index.html` locally — no build step, no server required.
 
 ```bash
-# or serve it locally
+# serve it locally
 npx serve .
 
-# build single-file, no-dependency bundles (English + Chinese):
+# build single-file, no-dependency bundles (German default + Chinese mirror):
 python3 build.py   # -> HandSimulator.html, HandSimulator.zh.html
 ```
 
@@ -43,8 +48,9 @@ python3 build.py   # -> HandSimulator.html, HandSimulator.zh.html
   weights from 6 N to 30 N. At a fixed grip force the light ones hold and the
   heavy ones slip, so the success rate reflects a real payload mix. **Next
   Payload** cycles them; **Full Sequence** auto-swaps after each cycle.
-- **Bilingual (English / 中文)** — full i18n with a live language toggle; the
-  build also emits a Chinese-default mirror (`?lang=zh` works too).
+- **Bilingual (Deutsch / 中文)** — full i18n with a live language toggle,
+  defaulting to German; the build also emits a Chinese-default mirror
+  (`?lang=de` / `?lang=zh` work too).
 - **Motion sequencer** — a small state machine chains primitives
   (open / fist / reach / close / lift / lower / release) into full
   pick-and-place cycles.
